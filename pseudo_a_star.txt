@@ -1,5 +1,4 @@
 
-// h(E) = ((d(E,objetivo1)+...+d(E,objetivoN)) * len(N)) + d(E,pT)
 
 
 function A*(start, goal)
