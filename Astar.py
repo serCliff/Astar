@@ -17,6 +17,7 @@ def pretty(data):
 class Astar:
 
 	def __init__(self):
+		self.location = "pS"
 		self.connected = fill_connected()
 		self.order = fill_order(0)
 		self.warehouse = fill_warehouse()
@@ -79,6 +80,7 @@ class Astar:
 				- location with multiple items
 
 		"""
+		
 		locations = dict()
 		if self.order[0].enclave == "":
 			
@@ -99,26 +101,58 @@ class Astar:
 				max_len = 0
 				max_loc = ""
 				for loc, items in locations.items():
-					if len(items) > max_len:
-						max_len = len(items)
-						max_loc=loc
+					print(loc, len(items), items)
+					
+
+					if len(items) >= max_len:
+						# If the location is equals than the best location, choose the nearest location, to start
+						if max_loc == "":
+							max_len = len(items)
+							max_loc=loc
+						elif self.distance(self.location, loc) < self.distance(self.location, max_loc):
+							max_len = len(items)
+							max_loc=loc
 				
 				print
 				print(max_loc + " and "+ str(max_len))	
 				print(pretty(locations))
 				
-				#TODO: Diferenciar cuando max_len es == 1 y coger de los elementos iguales aquellos cuya distancia sea más cercana
-				# Por ejemplo recorrer e ir almacenando siempre y cuando la nueva distancia sea menor
-
-				# if max_len > 1: # if len is one all locations are separated, choose nearest location
+				
+				to_delete = list() # list of locations collocated to delete of the best locations
+				if max_len > 1: 
+				# if len is one, all locations are separated, choose nearest location
 				#Select the best location of each item
-				to_delete = list() 
-				for item in locations[max_loc]:
-					for product in self.order:
-						if product.name == item and product.enclave == "":
-							product.enclave = max_loc
-							to_delete.append(item)
+					for item in locations[max_loc]:
+						for product in self.order:
+							if product.name == item and product.enclave == "":
+								product.enclave = max_loc
+								to_delete.append(item)
 
+				else: 
+					#For any product without asigned enclave, choose the nearest enclave of all
+					for product in self.order:
+						best_enclave = ""
+						
+						if product.enclave == "":
+							print("Empty enclave of: ", product.name)
+
+							for enclave, loc in locations.items():
+								if len(loc) > 0:
+									print(enclave, ">>>", best_enclave)
+									if product.name == loc[0]:
+
+										if best_enclave == "":
+											best_enclave = enclave
+										else:
+											if self.distance(self.location, enclave) < self.distance(self.location, best_enclave):
+												best_enclave = enclave
+										print("Best enclave: ",best_enclave)
+										to_delete.append(loc[0])
+								else:
+									del locations[loc]
+							product.enclave = best_enclave
+
+				#DELETE CHOSEN ENCLAVES
 				for item_d in to_delete:
 					for k, v in locations.items():
 						if item_d in v:
@@ -127,11 +161,11 @@ class Astar:
 							del locations[k]
 				
 				print(pretty(locations))
+				self.print_order()
+
+
 				
-
-
 			
-			self.print_order()
 				
 
 
