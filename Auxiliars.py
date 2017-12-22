@@ -8,9 +8,9 @@
 
 
 class Item:
-	def __init__(self, name, enclave, units):
+	def __init__(self, name, location, units):
 		self.name = name
-		self.enclave = enclave
+		self.location = location
 		self.units = units
 
 
@@ -72,8 +72,8 @@ def fill_warehouse():
 		Item("ratones","s4",210),
 		Item("plumas","s7",500),
 		Item("plumas","s8",400)
-		,
-		Item("melones","s2",100)
+		# ,
+		# Item("melones","s2",100)
 		# Item("patatas","s1",200),
 		# Item("melones","s1",100)
 	]
