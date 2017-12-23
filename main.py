@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
+from random import randint
 
 import Astar
 
@@ -9,11 +9,11 @@ import Astar
 
 def main():
 	
-	print("EMPIEZA EL JUEGO\n")
+	# print("EMPIEZA EL JUEGO\n")
 	# print(a.warehouse)
 	# print(a.connected)
-
-	a = Astar.Astar("pS", "pT")
+	val= randint(1,20)
+	a = Astar.Astar(initial_location="pS", final_location="pT", num_items=val)
 	# for k,i in a.connected.items():
 	# 	print(k, i.next, i.distance)
 	# 	for ad in i.adyacents:
@@ -21,6 +21,7 @@ def main():
 
 	# print a.distance("pS","pS")
 	# print a.distance("s8","pT")
+	# print a.distance("pS","s8")
 
 	# a.best_location()
 	# a.heuristic( "pS", "pT")

@@ -16,11 +16,11 @@ def pretty(data):
 
 class Astar:
 
-	def __init__(self, initial_location, final_location):
+	def __init__(self, initial_location, final_location, num_items):
 		self.location = initial_location
 		self.final = final_location
 		self.connected = fill_connected()
-		self.order = fill_order(0)
+		self.order = fill_order(num_items)
 		self.warehouse = fill_warehouse()
 		self.collected = list()
 
@@ -37,7 +37,7 @@ class Astar:
 	    # For each node, which node it can most efficiently be reached from.
 	    # If a node can be reached from many nodes, cameFrom will eventually contain the
 	    # most efficient previous step.
-	    cameFrom = list()
+	    cameFrom = dict()
 
 	    # For each node, the cost of getting from the start node to that node.
 	    gScore = self.fill_gscore(self.location)
@@ -57,36 +57,42 @@ class Astar:
 
 	    while openSet:
 
-
-	    	print("OPEN SET: "+str(openSet))
+	    	last_location = self.location
+	    	# print("OPEN SET: "+str(openSet))
 	        self.location = self.get_current(openSet, fScore)
-	        print("Opening: "+ self.location+"\n")
+	        # print(" *** OPENING: "+ self.location+" ***\n")
 	        self.collect_item()
 
-	        cameFrom.append(self.location)
+
+	        if not self.location in cameFrom:
+				cameFrom[self.location]= list()
+	        cameFrom[self.location].append(last_location)
 
 	        if self.location == self.final:
 	            return self.reconstruct_path(cameFrom, self.location)
 
-	        openSet = list()
+
+	        openSet.remove(self.location)
 	        closedSet.append(self.location)
 
 	        neighbors_of_current = self.get_neighbors(self.location)
 
 	        for neighbor in neighbors_of_current:
 	            
-	            # if neighbor in closedSet:
-	            #     continue		# Ignore the neighbor which is already evaluated.
+	            if neighbor in closedSet:
+	                continue		# Ignore the neighbor which is already evaluated.
 
 	            
 	            if neighbor not in openSet:	# Discover a new node
 	                openSet.append(neighbor)
 	            
+	            
 	            # The distance from start to a neighbor
 	            # the "dist_between" function may vary as per the solution requirements.
-
+	            tentative_gScore = gScore[self.location] + self.distance(self.location, neighbor)
 	            
-	            tentative_gScore = gScore[self.location] + self.distance(self.location, neighbor) 
+	            # print(self.location, neighbor, str(tentative_gScore)+" = "+str(gScore[self.location])+" + "+str(self.distance(self.location, neighbor))  )
+	            # print(tentative_gScore, gScore[neighbor])
 
 	            if tentative_gScore >= gScore[neighbor]:
 	                continue		# This is not a better path.
@@ -96,13 +102,14 @@ class Astar:
 	            # cameFrom[neighbor] = self.location
 	            gScore[neighbor] = tentative_gScore
 	            fScore[neighbor] = gScore[neighbor] + self.heuristic(neighbor)
+	            # print("NEW FSCORE OF: "+neighbor+" = "+str(fScore[neighbor]))
 
 	    return False
 
 	
 	def get_neighbors(self, current_location):
 		
-		print("GETTING NEIGHBORS OF "+ current_location)
+		# print("GETTING NEIGHBORS OF "+ current_location)
 		neighbors = list()
 		neighbors.append(self.connected[current_location].next)
 
@@ -110,23 +117,31 @@ class Astar:
 			for neighbor in self.connected[current_location].adyacents.keys():
 				neighbors.append(neighbor)
 
-		print(neighbors)
-		print
+		# print(neighbors)
+		# print
 		return neighbors
 
 	def get_current(self, openSet, fScore):
 		
-		# print("get current: "+str(openSet))
-		fScore = self.fill_fscore()
+		# print("GET CURRENT BETWEEN: "+str(openSet))
+		
+		# print("VIEJO: "+pretty(fScore))
+		# fScore = self.fill_fscore()
+		# print("NUEVO: "+pretty(fScore)+"\n")
+
 		
 		selected = ""
-		lowest_fScore = self.heuristic("pS") # MAX POSSIBLE FSCORE 
+		lowest_fScore = fScore[openSet[0]] # MAX POSSIBLE FSCORE 
 		
 		for item in openSet:
-			# print("fscore de:" + item + ": "+str(fScore[item]) + " <= "+str(lowest_fScore))
-			if fScore[item] <= lowest_fScore and fScore[item] >= 0:
+			# print("FSCORE de: " + item + ": "+str(fScore[item]) + " <= "+str(lowest_fScore))
+			if fScore[item] <= lowest_fScore:
 				selected = item
 				lowest_fScore = fScore[item]
+				# if fScore[item] == lowest_fScore:
+				# 	if self.distance(self.location, item) < self.distance(self.location, selected): 
+						
+
 
 		# print("SELECTED: ",selected)
 
@@ -152,7 +167,7 @@ class Astar:
 			# print("\n------------------------FSCORE", place)
 			fscore[place] = self.heuristic(place)
 
-		fscore[self.final] = 10
+		# fscore[self.final] = 10
 		return fscore
 
 	def heuristic(self, current):
@@ -170,18 +185,24 @@ class Astar:
 		if len(self.order) > 0:
 			if self.order[0].location == "":
 				self.best_location() # Calculate the best location of all items of our order
-				print("THAT IS THE BEST LOCATION OF OUR ORDER ITEMS\n")
+				print("THAT IS THE BEST LOCATION OF OUR ORDERED ITEMS\n")
 
 
 		#CALCULATE THE HEURISTIC
 		for item in self.order:
 			if item.location != current:
 				# print("orders")
-				order_distance += self.distance(current, item.location)
+				new_distance = self.distance(current, item.location)
+				
+				if new_distance < 0:
+					new_distance = self.distance(item.location, current)
+
+				order_distance += new_distance
 				multiplier += 1
 
 		# print("final")
 		final_distance = self.distance(current, self.final)
+
 		result = (order_distance * multiplier) + final_distance
 
 		# print("h("+str(current)+") = ("+str(order_distance)+" * "+str(multiplier)+") + "+str(final_distance) +" = "+str(result))
@@ -198,8 +219,6 @@ class Astar:
 		if current == goal:
 			return final_distance
 
-		if self.connected[current].next == self.final and self.final != goal:
-			return -100
 		if self.connected[current].next == goal:
 			final_distance = self.connected[current].distance
 			final=True
@@ -209,10 +228,17 @@ class Astar:
 					final_distance = dist
 					final=True
 
+		if self.connected[current].next == self.final and self.final != goal and final == False:
+			#IF WANT TO GET A PAST STATE, RETURNS NEGATIVE VALUE TO TRY REVERSE DISTANCE 
+			return -100
+
 		if final == True:
 			return final_distance
 		else:
-			return self.connected[current].distance + self.distance(self.connected[current].next, goal)
+			new_distance = self.distance(self.connected[current].next, goal)
+			if new_distance < 0:
+				new_distance = self.distance(goal, self.connected[current].next)
+			return self.connected[current].distance + new_distance
 
 	
 	def best_location(self):
@@ -223,7 +249,12 @@ class Astar:
 					- location with multiple items
 		"""
 
-		print("\nTAKING THE BEST LOCATION")
+		self.print_warehouse()
+		print("")
+		self.print_order()
+		print("\n#################################")
+		print("TAKING THE BEST LOCATION")
+		print("#################################")
 		locations = dict()
 		if self.order[0].location == "":
 			
@@ -234,8 +265,9 @@ class Astar:
 						if not warehouse_item.location in locations:
 							locations[warehouse_item.location] = list()
 						locations[warehouse_item.location].append(item.name)
-					else:
-						print("NO HAY SUFICIENTES UNIDADES DE: " + item.name +" EN: "+warehouse_item.location)
+						warehouse_item.units = warehouse_item.units - item.units
+					# else:
+						# print("HAVN`T ENOUGH UNITS OF: " + item.name +" IN: "+warehouse_item.location)
 
 			
 			#Choose the best options for all items
@@ -310,10 +342,12 @@ class Astar:
 				if item.location == "":
 					have_no_resources.append(item)
 			for item in have_no_resources:
-				print("\nDeleted ("+str(item.name)+") due the warehouse don´t have enough resources of it\n")
+				print("DELETED ("+str(item.name)+") due the warehouse don´t have enough resources of it")
 				self.collected.append(item)
 				self.order.remove(item)
 
+			self.print_warehouse()
+			print("")
 			self.print_order()
 
 				
@@ -334,23 +368,64 @@ class Astar:
 			if item in self.order:
 				self.order.remove(item)
 
-		# print("After collect items")
-		# self.print_order()
-		# print
+
 
 
 
 	def reconstruct_path(self, cameFrom, current):
 		# CHEQUEAR SI EN UN ESTADO EN EL QUE ESTAMOS HAY UN ITEM EN RECOGIDOS Y MOSTRAR QUE RECOGEMOS ESE
-		for route in cameFrom:
-			print(route)
+		
+		
+		
+
+		start=0
+		total_distance=0
+		path = list()
+		# print(pretty(cameFrom))
+
+		while cameFrom:
+			path.append(current)
+			last = cameFrom[current]
+			current = last.pop()
 			
+			if current == "pS":
+				path.append(current)
+				path.reverse()
+				cameFrom = dict()
 
+		
+		print("\n### PATH WALKED ###")
+		for i in range(len(path)-1):
+			distance = 0
+			# if self.connected[path[i]].next == path[i+1]:
+			# 	distance = self.connected[path[i]].distance
+			# else:
+			# 	for item, dis in self.connected[path[i]].adyacents.items():
+			# 		if item == path[i+1]:
+			# 			distance = dis
 
+			distance = self.distance(path[i], path[i+1])
+			total_distance+=distance
+
+			print(path[i] +" -> "+ path[i+1]+" ("+str(distance)+"m.)")
+			
+			for product in self.collected:
+				if path[i+1] == product.location:
+					print("WE COLLECT: "+product.name)
+
+		print("TOTAL WALKED  ("+str(total_distance)+"m.) ")
 
 	def print_order(self):
+		print("--- ORDER ("+str(len(self.order))+" products) ---")
 		for i in self.order:
-			print(i.name+": location ("+i.location+"), units: "+str(i.units))
+			print(i.name+": ("+i.location+"), units: "+str(i.units))
+		# print("")
+
+	def print_warehouse(self):
+		print("--- WAREHOUSE ---")
+		for list_i in self.warehouse.values():
+			for i in list_i:
+				print(i.name+": ("+i.location+"), units: "+str(i.units))
 		# print("")
 
 	

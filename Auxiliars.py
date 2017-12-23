@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-
+from  random import randint
 
 
 
@@ -34,6 +34,7 @@ def fill_connected():
 		["c3", "c4", 10, {"s3":5, "s7": 5}],
 		["c4", "pT", 10, {"s4":5, "s8": 5}],
 		["pS", "c1", 10,{}],
+		["pT", "c4", -10,{}],
 		["s1", "c1", 5, {}],
 		["s2", "c2", 5, {}],
 		["s3", "c3", 5, {}],
@@ -89,14 +90,25 @@ def fill_warehouse():
 
 def fill_order(num_items):
 
-	order = list
+	order = list()
 
 	if num_items == 0: # Comun order
 		order = [
 			Item("patatas","",40),
 			Item("boligrafos","",40),
-			Item("melones","",10)
+			Item("plumas","",10)
+			# ,Item("papeles", "", 10)
 			]
+	else:
+		warehouse = fill_warehouse()
+		for i in range(0, num_items):
+			val=randint(0, (len(warehouse)-1))
+			item = warehouse.values()[ val ]
+			val=randint(0, (len(item)-1))
+			product = item[val]
+			new_order = Item(product.name, "", randint(int(product.units*0.2), int(product.units*1.2)))
+			# print(new_order.name, new_order.units, warehouse[new_order.name][0].units)
+			order.append(new_order)
 
 	
 	return order
