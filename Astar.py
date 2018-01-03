@@ -48,7 +48,7 @@ class Astar:
 
 	    # For each node, the total cost of getting from the start node to the goal
 	    # by passing by that node. That value is partly known, partly heuristic.
-	    fScore = self.fill_fscore()
+	    fScore = self.fill_fscore(gScore)
 		
 
 	    # # For the first node, that value is completely heuristic.
@@ -144,6 +144,7 @@ class Astar:
 
 
 		# print("SELECTED: ",selected)
+		# print("")
 
 		return selected
 
@@ -158,14 +159,14 @@ class Astar:
 		gscore[self.final] = self.distance(current_location, self.final)
 		return gscore
 	
-	def fill_fscore(self):
+	def fill_fscore(self, gScore):
 
 		# print("\n\n### FSCORE ###")
 		fscore = dict()
 
 		for place in self.connected.keys():
-			# print("\n------------------------FSCORE", place)
-			fscore[place] = self.heuristic(place)
+			fscore[place] = gScore[place] + self.heuristic(place)
+			# print("\n------------------------FSCORE: "+ place+": "+str(fscore[place])+" = "+str(gScore[place])+" + "+str(self.heuristic(place)))
 
 		# fscore[self.final] = 10
 		return fscore
